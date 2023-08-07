@@ -7,11 +7,11 @@ import {
     BrowserRouter,
     Routes,
     Route,
-    Link
 } from "react-router-dom";
 import BookAdd from "./features/book/BookAdd";
 import BookEdit from "./features/book/BookEdit";
-import BookDelete from "./features/book/BookDelete";
+import Genre from "./features/genre/Genre";
+import Footer from "./features/Footer";
 
 function App() {
   return (
@@ -24,9 +24,14 @@ function App() {
                     <Route index element={<Book />} />
                     <Route path="add" element={<BookAdd />} />
                     <Route path="edit" element={<BookEdit />} />
-                    <Route path="delete" element={<BookDelete />} />
+                </Route>
+                <Route path="/genres">
+                    <Route index element={<Genre />} />
+                    <Route path="add" />
+                    <Route path="edit" />
                 </Route>
             </Routes>
+            <Footer />
         </BrowserRouter>
     </div>
   );

@@ -1,11 +1,13 @@
 import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
-import bookSlice, {IBook} from "../features/book/bookSlice";
+import bookSlice from "../features/book/bookSlice";
 import authorSlice from "../features/author/authorSlice";
+import genreSlice from "../features/genre/genreSlice";
 
 export const store = configureStore({
   reducer: {
     books: bookSlice,
     authors: authorSlice,
+    genres: genreSlice,
   },
 });
 

@@ -1,37 +1,38 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import axios from "axios";
+import {IAuthor} from "./authorModels";
+import {fetchAuthors} from "./authorAPI";
+import {RootState} from "../../app/store";
 
-
-export interface IAuthor {
-    id: number,
-    firstName: string,
-    lastName: string
-}
 
 const initialState = {
     items: [] as IAuthor[]
 }
 
 export const getAuthorsAsync = createAsyncThunk('author/getAuthors', async (_, {dispatch}) => {
-    const response = await axios.get('http://localhost:5000/api/authors');
-    const authorsData = response.data;
-
-    dispatch(setAuthors(authorsData));
+    const response = await fetchAuthors();
+    return response.data;
 })
 
 const authorSlice = createSlice({
     name: 'author',
     initialState,
     reducers: {
-        setAuthor: (state, action) =>  {
-            state.items.push(action.payload);
-        },
         setAuthors: (state, action) => {
-            state.items.push(...action.payload);
+            state.items = action.payload;
+        },
+        removeAuthors: state => {
+            state.items = [];
         }
+    },
+    extraReducers: builder => {
+        builder
+            .addCase(getAuthorsAsync.fulfilled, (state, action) => {
+                state.items = action.payload;
+            })
     }
 })
 
-export default authorSlice.reducer;
+export const {setAuthors, removeAuthors} = authorSlice.actions;
 
-export const {setAuthor, setAuthors} = authorSlice.actions;
+export const selectAuthors = (state: RootState) => state.authors.items;
+export default authorSlice.reducer;

@@ -1,129 +1,65 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import axios from "axios";
-import book from "./Book";
-
-export interface IBook {
-    id?: number,
-    title: string,
-    year: number,
-    description?: string,
-    authorId: number,
-    genreIds: number[]
-}
-
-interface IBookFull extends IBook {
-    pagesNumber: number,
-    publisherId: number,
-    warehouse: {
-        price: number,
-        quantity: number,
-    },
-    languageId: number,
-}
+import {IBook, IBookFull} from "./bookModels";
+import {addBooksService, deleteBookService, fetchBooksService, updateBookService} from "./bookAPI";
+import {RootState} from "../../app/store";
+import {createFullBook, extractSimpleBook, handleError} from "./bookSliceHelpers";
 
 const initialState = {
-  items: [] as IBook[]
+    items: [] as IBook[],
+    selectedBookToEdit: {} as IBook
 };
 
-export const getBooksAsync = createAsyncThunk('book/getBooks', async (_, {dispatch}) => {
-    const response = await axios.get('http://localhost:5000/api/books');
-    const booksData = response.data;
+export const getBooksAsync = createAsyncThunk('book/getBooks', async () => {
+    try {
+        const response = await fetchBooksService();
+        const fullBooks: IBookFull[] = response.data;
 
-    booksData.map((bookData: any) => {
-
-        let shortenedDescription =
-            bookData.description.length > 50 ? `${bookData.description.substring(0, 50)}...` : bookData.description;
-
-        const book: IBook = {
-            id: bookData.id,
-            title: bookData.title,
-            year: bookData.year,
-            description: shortenedDescription,
-            authorId: bookData.authorId,
-            genreIds: bookData.genreIds,
-        };
-
-        dispatch(setBook(book));
-    });
+        return extractSimpleBook(fullBooks);
+    }
+    catch (error: any) {
+        handleError(error, 'Error while fetching books');
+    }
 })
 
-export const postBooksAsync = createAsyncThunk('book/postBooks', async (bookToAdd: IBook) => {
-    const fullBookToAdd: IBookFull = {
-        authorId: bookToAdd.authorId,
-        description: bookToAdd.description,
-        genreIds: bookToAdd.genreIds,
-        languageId: 1,
-        pagesNumber: 1111,
-        publisherId: 1,
-        title: bookToAdd.title,
-        warehouse:
-            {
-                price: 66,
-                quantity: 7
-            },
-        year: bookToAdd.year
-    };
+export const addBooksAsync = createAsyncThunk('book/postBooks', async (bookToAdd: IBook) => {
+    const fullBookToAdd: IBookFull = createFullBook(bookToAdd);
 
     try {
-        const response = await axios.post('http://localhost:5000/api/books', fullBookToAdd);
-        console.log(`Last inserted id: ${response.data}`);
-        alert(`Last inserted id: ${response.data}`);
+        const response = await addBooksService(fullBookToAdd);
+        return response.data;
     }
-    catch (e) {
-        console.log(fullBookToAdd);
-        console.log(e);
-
-        alert('Error');
+    catch (error: any) {
+        handleError(error, 'Error while adding the book', fullBookToAdd);
     }
 });
 
 export const updateBookAsync = createAsyncThunk('book/updateBook', async (bookToUpdate: IBook, {dispatch}) => {
-    const fullBookToUpdate: IBookFull = {
-        authorId: bookToUpdate.authorId,
-        description: bookToUpdate.description,
-        genreIds: bookToUpdate.genreIds,
-        languageId: 1,
-        pagesNumber: 1111,
-        publisherId: 1,
-        title: bookToUpdate.title,
-        warehouse:
-            {
-                price: 66,
-                quantity: 7
-            },
-        year: bookToUpdate.year
-    };
+    const fullBookToUpdate: IBookFull = createFullBook(bookToUpdate);
 
     try {
-        const response = await axios.put(`http://localhost:5000/api/books/${bookToUpdate.id}`, fullBookToUpdate);
-        alert(`Updated: ${response.data}`);
-
-        dispatch(updateBook(bookToUpdate));
+        const response = await updateBookService(fullBookToUpdate);
+        return {
+            isUpdated: response.data,
+            book: bookToUpdate
+        };
     }
-    catch (e) {
-        console.log(`Failed to update book with id: ${bookToUpdate.id}`);
-        console.log(e);
-        console.log(fullBookToUpdate);
-
-        alert('Error');
+    catch (error: any) {
+        handleError(error, `Error! Failed to update book with id: ${bookToUpdate.id}`, fullBookToUpdate);
     }
 });
 
 export const deleteBookAsync = createAsyncThunk('book/deleteBook', async (id: number, {dispatch}) => {
     try {
-        const response = await axios.delete(`http://localhost:5000/api/books/${id}`);
-        alert(`Deleted: ${response.data}`);
-
-        dispatch(removeBook(id));
+        const response = await deleteBookService(id);
+        return {
+            isDeleted: response.data,
+            bookId: id
+        };
     }
-    catch (e) {
-        console.log(`Failed to delete book with id: ${id}`);
-        console.log(e);
-
-        alert('Error');
+    catch (error: any) {
+        handleError(error, `Failed to delete book with id: ${id}`);
     }
 });
-
 
 
 const bookSlice = createSlice({
@@ -133,19 +69,62 @@ const bookSlice = createSlice({
         setBook: (state, action) => {
             state.items.push(action.payload);
         },
+        setBooks: (state, action) => {
+            state.items = action.payload;
+        },
         updateBook: (state, action) => {
-            const index = state.items.findIndex(item => item.id === action.payload.id);
+            const index: number = state.items.findIndex(item => item.id === action.payload.id);
             state.items[index] = action.payload;
         },
         removeBook: (state, action) => {
             state.items = state.items.filter(item => item.id !== action.payload);
         },
-        removeBooks: (state) => {
+        removeBooks: state => {
             state.items = [];
         },
+        setBookToEdit: (state, action) => {
+            state.selectedBookToEdit = action.payload;
+        }
+    },
+    extraReducers: builder => {
+        builder
+            .addCase(getBooksAsync.fulfilled, (state, action) => {
+                state.items = action.payload!;
+            })
+            .addCase(addBooksAsync.fulfilled, (state, action) => {
+                alert(`Last inserted id: ${action.payload}`);
+            })
+            .addCase(updateBookAsync.fulfilled, (state, action) => {
+                if (action.payload!.isUpdated) {
+                    const index: number = state.items.findIndex(item => item.id === action.payload!.book.id);
+                    state.items[index] = action.payload!.book;
+
+                    alert('Updated successfully');
+                }
+                else {
+                    alert('Failed to update the book');
+                }
+            })
+            .addCase(deleteBookAsync.fulfilled, (state, action) => {
+                if (action.payload!.isDeleted) {
+                    state.items = state.items.filter(item => item.id !== action.payload!.bookId);
+
+                    alert('Deleted successfully');
+                }
+                else {
+                    alert('Failed to delete the book');
+                }
+            }
+        );
     }
 })
 
+export const {
+    setBook,
+    updateBook,
+    removeBook,
+    removeBooks,
+    setBookToEdit} = bookSlice.actions;
+export const selectBooks = (state: RootState) => state.books.items;
+export const selectBookToEdit = (state: RootState) => state.books.selectedBookToEdit;
 export default bookSlice.reducer;
-
-export const {setBook, updateBook, removeBook, removeBooks} = bookSlice.actions;

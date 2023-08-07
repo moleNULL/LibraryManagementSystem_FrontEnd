@@ -1,133 +1,97 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import {useAppDispatch} from "../../app/hooks";
 import {useSelector} from "react-redux";
-import {RootState} from "../../app/store";
-import {getBooksAsync, IBook, postBooksAsync} from "./bookSlice";
-import {getAuthorsAsync} from "../author/authorSlice";
+import {addBooksAsync} from "./bookSlice";
+import {getAuthorsAsync, selectAuthors} from "../author/authorSlice";
 import {Link} from "react-router-dom";
+import {IBook} from "./bookModels";
+import {IAuthor} from "../author/authorModels";
+import {IGenre} from "../genre/genreModels";
+import {getGenresAsync, selectGenres} from "../genre/genreSlice";
+import {AppDispatch} from "../../app/store";
+import BookForm from './components/BookForm';
 
 const initialFormData: IBook = {
     id: undefined,
     title: "",
-    year: 0,
+    year: 2020,
     description: "",
     authorId: 0,
     genreIds: [],
 }
 
 function BookAdd() {
-    const dispatch = useAppDispatch();
-    const books = useSelector((state: RootState) => state.books.items);
-    const authors = useSelector((state: RootState) => state.authors.items);
-    const genreIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const dispatch: AppDispatch = useAppDispatch();
+    const authors: IAuthor[] = useSelector(selectAuthors);
+    const genres: IGenre[] = useSelector(selectGenres);
 
-    const [formData, setFormData] = useState<IBook>(initialFormData);
-    const formRef = useRef<HTMLFormElement | null>(null);
+    const [formBookData, setFormBookData] = useState<IBook>(initialFormData);
 
     useEffect(() => {
-        if (books.length === 0) {
-            dispatch(getBooksAsync());
-        }
+        dispatch(getAuthorsAsync());
+        dispatch(getGenresAsync());
 
-        if (authors.length === 0) {
-            dispatch(getAuthorsAsync());
-        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
 
-    function handleSubmit(e: React.FormEvent<HTMLFormElement>) : void {
-        e.preventDefault();
+    function handleSubmit(event: React.FormEvent<HTMLFormElement>) : void {
+        event.preventDefault();
 
-        dispatch(postBooksAsync(formData));
+        dispatch(addBooksAsync(formBookData));
 
-        if (formRef.current) {
-            formRef.current.reset();
-        }
+        setFormBookData(initialFormData);
     }
 
-    function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) : void {
-        const {name, value} = e.target;
+    function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) : void {
+        const {name, value} = event.target;
 
         if (name === 'book.title') {
-            setFormData(prevState => ({...prevState, title: value}));
+            setFormBookData(prevState => ({...prevState, title: value}));
         }
 
         if (name === 'book.year') {
-            setFormData(prevState => ({...prevState, year: parseInt(value)}));
+            setFormBookData(prevState => ({...prevState, year: parseInt(value)}));
         }
 
         if (name === 'book.description') {
             if (value) {
-                setFormData(prevState => ({...prevState, description: value}));
+                setFormBookData(prevState => ({...prevState, description: value}));
             }
         }
 
-        if (name === 'selectAuthor') {
-            setFormData(prevState => ({...prevState, authorId: parseInt(value)}));
+        if (name === 'book.selectedAuthorId') {
+            setFormBookData(prevState => ({...prevState, authorId: parseInt(value)}));
         }
     }
 
     function handleGenreChange(e: React.ChangeEvent<HTMLSelectElement>): void {
-        const selectedOptions = Array.from(e.target.selectedOptions).map(option => parseInt(option.value));
-        setFormData(prevState => ({ ...prevState, genreIds: selectedOptions }));
+        const selectedOptions: number[] = Array.from(e.target.selectedOptions).map(option => parseInt(option.value));
+        setFormBookData((prevState: IBook) => ({ ...prevState, genreIds: selectedOptions }));
     }
 
     return (
         <div>
-            <h1 className="center">Add Books Page</h1>
+            <header>
+                <h1 className="center">Add Book Page</h1>
+            </header>
 
             <div className="button-container">
-                <Link to="/books/add"><input type="button" className="action-button" value="Add" disabled/></Link>
-                <Link to="/books/edit"><input type="button" className="action-button" value="Edit"/></Link>
-                <Link to="/books/delete"><input type="button" className="action-button" value="Delete"/></Link>
+                <Link to="/books">
+                    <button className="action-button">{"<—"}</button>
+                </Link>
             </div>
 
-            <form ref={formRef} onSubmit={handleSubmit}>
-            <table>
-                <thead>
-                <tr>
-                    <th>Id</th>
-                    <th>Title</th>
-                    <th>Year</th>
-                    <th>Description</th>
-                    <th>Author</th>
-                    <th>GenreIds</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td><input type="hidden" name="book.id" /></td>
-                    <td><input type="text" name="book.title" onChange={handleChange} required/></td>
-                    <td><input type="number" max={new Date().getFullYear()} name="book.year" onChange={handleChange} required/></td>
-                    <td><input type="text" name="book.description" onChange={handleChange}/></td>
-                    <td>
-                        <select name="selectAuthor" onChange={handleChange} required>
-                            <option></option>
-                            {
-                                authors.map(author => (
-                                    <option key={author.id} value={author.id}>{author.firstName + ' ' + author.lastName}</option>
-                                ))
-                            }
-                        </select>
-                    </td>
-                    <td>
-                        <select name="selectGenres" onChange={handleGenreChange} multiple required>
-                            {
-                                genreIds.map(genreId => (
-                                    <option key={genreId} value={genreId}>{genreId}</option>
-                                ))
-                            }
-                        </select>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-
-            <br />
-
-            <div>
-                <input type="submit" className="btn-change" value="Add Category" />
-            </div>
-            </form>
+            <main>
+                <BookForm
+                    formBookData={formBookData}
+                    authors={authors}
+                    genres={genres}
+                    handleSubmit={handleSubmit}
+                    handleChange={handleChange}
+                    handleGenreChange={handleGenreChange}
+                    submitButtonText={"Add Book"}
+                />
+            </main>
         </div>
     );
 }
