@@ -1,23 +1,16 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import {fetchGenres} from "./genreAPI";
+import {fetchGenresAsync} from "./genreAPI";
 import {IGenre} from "./genreModels";
 import {RootState} from "../../app/store";
 
 const initialState = {
-    items: [] as IGenre[]
+    items: [] as IGenre[],
+    isLoading: false,
 };
 
-
-
-export const getGenresAsync = createAsyncThunk('genre/getGenres', async () => {
-    try {
-        const response = await fetchGenres();
-        return response.data;
-    }
-    catch (e) {
-        console.log(e);
-        alert('Error while fetching genres');
-    }
+export const getGenres = createAsyncThunk('genre/getGenres', async () => {
+    const response = await fetchGenresAsync();
+    return response.data;
 });
 
 const genreSlice = createSlice({
@@ -33,15 +26,27 @@ const genreSlice = createSlice({
     },
     extraReducers: builder => {
         builder
-            .addCase(getGenresAsync.fulfilled, (state, action) => {
+            .addCase(getGenres.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(getGenres.fulfilled, (state, action) => {
+                state.isLoading = false;
                 state.items = action.payload!;
+            })
+            .addCase(getGenres.rejected, (state, action) => {
+                state.isLoading = false;
+                console.log(`Error: ${action.error.message}`);
+                alert('Error while fetching genres');
             });
     }
 });
 
 
-export const {setGenres, removeGenres} = genreSlice.actions;
+export const {
+    setGenres,
+    removeGenres} = genreSlice.actions;
 
 export const selectGenres = (state: RootState) => state.genres.items;
+export const selectIsGenreLoading = (state: RootState) => state.genres.isLoading;
 
 export default genreSlice.reducer;

@@ -1,7 +1,7 @@
 import {AxiosResponse} from "axios";
 import {IGenre} from "./genreModels";
-import API from '../api'
+import API from '../apiLibrary'
 
-export function fetchGenres(): Promise<AxiosResponse<IGenre[], any>> {
-    return API.get('books/genres');
+export function fetchGenresAsync(): Promise<AxiosResponse<IGenre[]>> {
+    return API.get('/genres');
 }

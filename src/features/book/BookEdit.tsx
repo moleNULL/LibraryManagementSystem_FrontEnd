@@ -1,70 +1,77 @@
 import React, {useEffect, useState} from 'react'
 import {useAppDispatch} from "../../app/hooks";
 import {useSelector} from "react-redux";
-import {AppDispatch, } from "../../app/store";
-import {selectBookToEdit, updateBookAsync} from "./bookSlice";
-import {getAuthorsAsync, selectAuthors} from "../author/authorSlice";
-import {Link} from "react-router-dom";
+import {AppDispatch} from "../../app/store";
+import {
+    getBookById,
+    removeBooks, selectBooks,
+    selectIsBookLoading,
+    updateBook
+} from "./bookSlice";
+import {getAuthors, removeAuthors, selectAuthors, selectIsAuthorLoading} from "../author/authorSlice";
+import {Link, useParams} from "react-router-dom";
 import {IBook} from "./bookModels";
-import {IAuthor} from "../author/authorModels";
+import {IAuthorSimple} from "../author/authorModels";
 import {IGenre} from "../genre/genreModels";
-import {getGenresAsync, selectGenres} from "../genre/genreSlice";
-import _ from "lodash";
+import {getGenres, removeGenres, selectGenres, selectIsGenreLoading} from "../genre/genreSlice";
+import {isEqual} from "lodash";
 import BookForm from './components/BookForm';
-
+import {updateFormBookData, updateFormBookGenresData} from "./bookHelpers";
+import Spinner from "../Spinner";
 
 function BookEdit() {
     const dispatch: AppDispatch = useAppDispatch();
-    const authors: IAuthor[] = useSelector(selectAuthors);
+    const {id} = useParams();
+    const authors: IAuthorSimple[] = useSelector(selectAuthors);
     const genres: IGenre[] = useSelector(selectGenres);
-    let bookToEdit: IBook = useSelector(selectBookToEdit);
+    const isBookLoading: boolean = useSelector(selectIsBookLoading);
+    const isAuthorLoading: boolean = useSelector(selectIsAuthorLoading);
+    const isGenreLoading: boolean = useSelector(selectIsGenreLoading);
+    let bookToEdit: IBook = useSelector(selectBooks)[0];
 
     const [formBookData, setFormBookData] = useState<IBook>(bookToEdit);
 
     useEffect(() => {
-        dispatch(getAuthorsAsync());
-        dispatch(getGenresAsync());
+        dispatch(getBookById(parseInt(id!)));
+        dispatch(getAuthors());
+        dispatch(getGenres());
+
+        return (() => {
+            dispatch(removeBooks());
+            dispatch(removeAuthors());
+            dispatch(removeGenres());
+        });
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
 
+    useEffect(() => {
+        setFormBookData(bookToEdit);
+    }, [bookToEdit]);
+
+
+    if (isBookLoading || isAuthorLoading || isGenreLoading) {
+        return <Spinner />;
+    }
+
     function handleSubmit(event: React.FormEvent<HTMLFormElement>) : void {
         event.preventDefault();
 
-        if (_.isEqual(bookToEdit, formBookData)) {
+        if (isEqual(bookToEdit, formBookData)) {
             alert("You haven't changed anything");
         }
         else {
-            dispatch(updateBookAsync(formBookData));
+            dispatch(updateBook(formBookData));
             bookToEdit = formBookData; // refresh the data for bookToEdit after successful update
         }
     }
 
     function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) : void {
-        const {name, value} = event.target;
-
-        if (name === 'book.title') {
-            setFormBookData(prevState => ({...prevState, title: value}));
-        }
-
-        if (name === 'book.year') {
-            setFormBookData(prevState => ({...prevState, year: parseInt(value)}));
-        }
-
-        if (name === 'book.description') {
-            if (value) {
-                setFormBookData(prevState => ({...prevState, description: value}));
-            }
-        }
-
-        if (name === 'book.selectedAuthorId') {
-            setFormBookData(prevState => ({...prevState, authorId: parseInt(value)}));
-        }
+        updateFormBookData(event, formBookData, setFormBookData);
     }
 
     function handleGenreChange(event: React.ChangeEvent<HTMLSelectElement>): void {
-        const selectedOptions: number[] = Array.from(event.target.selectedOptions).map(option => parseInt(option.value));
-        setFormBookData((prevState: IBook) => ({ ...prevState, genreIds: selectedOptions }));
+        updateFormBookGenresData(event, formBookData, setFormBookData);
     }
 
     return (
@@ -74,21 +81,22 @@ function BookEdit() {
             <div className="button-container">
                 <Link to="/books"><button className="action-button">{"<—"}</button></Link>
             </div>
-
             {
-                bookToEdit.id ?
-                    <main>
-                        <BookForm
-                            formBookData={formBookData}
-                            authors={authors}
-                            genres={genres}
-                            handleSubmit={handleSubmit}
-                            handleChange={handleChange}
-                            handleGenreChange={handleGenreChange}
-                            submitButtonText={"Edit Book"}
-                        />
-                    </main>
-                : <h2>No book chosen to edit</h2>
+                bookToEdit ?
+                    bookToEdit.id ?
+                        <main>
+                            <BookForm
+                                formBookData={formBookData}
+                                authors={authors}
+                                genres={genres}
+                                handleSubmit={handleSubmit}
+                                handleChange={handleChange}
+                                handleGenreChange={handleGenreChange}
+                                submitButtonText={"Edit Book"}
+                            />
+                        </main>
+                    : <h2>No book chosen to edit</h2>
+                : <></>
             }
         </div>
     );

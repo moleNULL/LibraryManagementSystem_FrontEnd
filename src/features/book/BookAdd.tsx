@@ -1,17 +1,18 @@
 import React, {useEffect, useState} from 'react'
 import {useAppDispatch} from "../../app/hooks";
 import {useSelector} from "react-redux";
-import {addBooksAsync} from "./bookSlice";
-import {getAuthorsAsync, selectAuthors} from "../author/authorSlice";
+import {addBook} from "./bookSlice";
+import {getAuthors, selectAuthors} from "../author/authorSlice";
 import {Link} from "react-router-dom";
 import {IBook} from "./bookModels";
-import {IAuthor} from "../author/authorModels";
+import {IAuthorSimple} from "../author/authorModels";
 import {IGenre} from "../genre/genreModels";
-import {getGenresAsync, selectGenres} from "../genre/genreSlice";
+import {getGenres, selectGenres} from "../genre/genreSlice";
 import {AppDispatch} from "../../app/store";
 import BookForm from './components/BookForm';
+import {updateFormBookData, updateFormBookGenresData} from "./bookHelpers";
 
-const initialFormData: IBook = {
+const initialFormBookData: IBook = {
     id: undefined,
     title: "",
     year: 2020,
@@ -22,14 +23,14 @@ const initialFormData: IBook = {
 
 function BookAdd() {
     const dispatch: AppDispatch = useAppDispatch();
-    const authors: IAuthor[] = useSelector(selectAuthors);
+    const authors: IAuthorSimple[] = useSelector(selectAuthors);
     const genres: IGenre[] = useSelector(selectGenres);
 
-    const [formBookData, setFormBookData] = useState<IBook>(initialFormData);
+    const [formBookData, setFormBookData] = useState<IBook>(initialFormBookData);
 
     useEffect(() => {
-        dispatch(getAuthorsAsync());
-        dispatch(getGenresAsync());
+        dispatch(getAuthors());
+        dispatch(getGenres());
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
@@ -37,36 +38,16 @@ function BookAdd() {
     function handleSubmit(event: React.FormEvent<HTMLFormElement>) : void {
         event.preventDefault();
 
-        dispatch(addBooksAsync(formBookData));
-
-        setFormBookData(initialFormData);
+        dispatch(addBook(formBookData));
+        setFormBookData(initialFormBookData);
     }
 
     function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) : void {
-        const {name, value} = event.target;
-
-        if (name === 'book.title') {
-            setFormBookData(prevState => ({...prevState, title: value}));
-        }
-
-        if (name === 'book.year') {
-            setFormBookData(prevState => ({...prevState, year: parseInt(value)}));
-        }
-
-        if (name === 'book.description') {
-            if (value) {
-                setFormBookData(prevState => ({...prevState, description: value}));
-            }
-        }
-
-        if (name === 'book.selectedAuthorId') {
-            setFormBookData(prevState => ({...prevState, authorId: parseInt(value)}));
-        }
+        updateFormBookData(event, formBookData, setFormBookData);
     }
 
-    function handleGenreChange(e: React.ChangeEvent<HTMLSelectElement>): void {
-        const selectedOptions: number[] = Array.from(e.target.selectedOptions).map(option => parseInt(option.value));
-        setFormBookData((prevState: IBook) => ({ ...prevState, genreIds: selectedOptions }));
+    function handleGenreChange(event: React.ChangeEvent<HTMLSelectElement>): void {
+        updateFormBookGenresData(event, formBookData, setFormBookData);
     }
 
     return (

@@ -1,19 +1,27 @@
 import {AxiosResponse} from "axios";
-import {IBookFull} from "./bookModels";
-import API from '../api'
+import {IBook, IBookFull} from "./bookModels";
+import API from '../apiLibrary'
 
-export function fetchBooksService() : Promise<AxiosResponse<IBookFull[], any>> {
-    return API.get('books/books');
+export function fetchBooksAsync() : Promise<AxiosResponse<IBook[]>> {
+    return API.get('/books', {
+        headers: {
+            Authorization: `Bearer ${window.localStorage.getItem("jwt")}`
+        }
+    });
 }
 
-export function addBooksService(book: IBookFull) : Promise<AxiosResponse<number, any>> {
-    return API.post('books/books', book);
+export function fetchBookByIdAsync(id: number) : Promise<AxiosResponse<IBook>> {
+    return API.get(`/books/${id}`);
 }
 
-export function updateBookService(book: IBookFull) : Promise<AxiosResponse<boolean, any>> {
-    return API.put(`books/books/${book.id}`, book);
+export function addBooksAsync(book: IBookFull) : Promise<AxiosResponse<number>> {
+    return API.post('/books', book);
 }
 
-export function deleteBookService(id: number) : Promise<AxiosResponse<boolean, any>> {
-    return API.delete(`books/books/${id}`);
+export function updateBookAsync(book: IBookFull) : Promise<AxiosResponse<boolean>> {
+    return API.put(`/books/${book.id}`, book);
+}
+
+export function deleteBookAsync(id: number) : Promise<AxiosResponse<boolean>> {
+    return API.delete(`/books/${id}`);
 }

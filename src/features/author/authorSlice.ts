@@ -1,15 +1,16 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import {IAuthor} from "./authorModels";
-import {fetchAuthors} from "./authorAPI";
+import {IAuthorSimple} from "./authorModels";
+import {fetchAuthorsAsync} from "./authorAPI";
 import {RootState} from "../../app/store";
 
 
 const initialState = {
-    items: [] as IAuthor[]
+    items: [] as IAuthorSimple[],
+    isLoading: false,
 }
 
-export const getAuthorsAsync = createAsyncThunk('author/getAuthors', async (_, {dispatch}) => {
-    const response = await fetchAuthors();
+export const getAuthors = createAsyncThunk('author/getAuthors', async () => {
+    const response = await fetchAuthorsAsync();
     return response.data;
 })
 
@@ -26,13 +27,23 @@ const authorSlice = createSlice({
     },
     extraReducers: builder => {
         builder
-            .addCase(getAuthorsAsync.fulfilled, (state, action) => {
+            .addCase(getAuthors.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(getAuthors.fulfilled, (state, action) => {
+                state.isLoading = false;
                 state.items = action.payload;
             })
+            .addCase(getAuthors.rejected, (state, action) => {
+                state.isLoading = false;
+                console.log(`Error: ${action.error.message}`);
+                alert('Error while fetching authors');
+            });
     }
 })
 
 export const {setAuthors, removeAuthors} = authorSlice.actions;
 
 export const selectAuthors = (state: RootState) => state.authors.items;
+export const selectIsAuthorLoading = (state: RootState) => state.authors.isLoading;
 export default authorSlice.reducer;

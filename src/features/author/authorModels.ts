@@ -3,3 +3,8 @@ export interface IAuthor {
     firstName: string,
     lastName: string
 }
+
+export interface IAuthorSimple {
+    id: number,
+    fullName: string
+}

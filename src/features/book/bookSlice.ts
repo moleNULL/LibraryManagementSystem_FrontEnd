@@ -1,43 +1,45 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
 import {IBook, IBookFull} from "./bookModels";
-import {addBooksService, deleteBookService, fetchBooksService, updateBookService} from "./bookAPI";
+import {addBooksAsync, deleteBookAsync, fetchBookByIdAsync, fetchBooksAsync, updateBookAsync} from "./bookAPI";
 import {RootState} from "../../app/store";
-import {createFullBook, extractSimpleBook, handleError} from "./bookSliceHelpers";
+import {createFullBook, handleError} from "./bookHelpers";
+
 
 const initialState = {
     items: [] as IBook[],
-    selectedBookToEdit: {} as IBook
+    isLoading: false,
 };
-
-export const getBooksAsync = createAsyncThunk('book/getBooks', async () => {
-    try {
-        const response = await fetchBooksService();
-        const fullBooks: IBookFull[] = response.data;
-
-        return extractSimpleBook(fullBooks);
+export const getBooks = createAsyncThunk('book/getBooks', async () => {
+    const response = await fetchBooksAsync();
+    if (response.status === 404) {
+        alert('404');
     }
-    catch (error: any) {
-        handleError(error, 'Error while fetching books');
-    }
+    return response.data;
 })
 
-export const addBooksAsync = createAsyncThunk('book/postBooks', async (bookToAdd: IBook) => {
+export const getBookById = createAsyncThunk('book/getBookById', async (id: number) => {
+    const response = await fetchBookByIdAsync(id);
+    return response.data;
+})
+
+export const addBook = createAsyncThunk('book/postBooks', async (bookToAdd: IBook) => {
     const fullBookToAdd: IBookFull = createFullBook(bookToAdd);
 
     try {
-        const response = await addBooksService(fullBookToAdd);
+        const response = await addBooksAsync(fullBookToAdd);
         return response.data;
     }
     catch (error: any) {
         handleError(error, 'Error while adding the book', fullBookToAdd);
+        throw error;
     }
 });
 
-export const updateBookAsync = createAsyncThunk('book/updateBook', async (bookToUpdate: IBook, {dispatch}) => {
+export const updateBook = createAsyncThunk('book/updateBook', async (bookToUpdate: IBook) => {
     const fullBookToUpdate: IBookFull = createFullBook(bookToUpdate);
 
     try {
-        const response = await updateBookService(fullBookToUpdate);
+        const response = await updateBookAsync(fullBookToUpdate);
         return {
             isUpdated: response.data,
             book: bookToUpdate
@@ -45,12 +47,13 @@ export const updateBookAsync = createAsyncThunk('book/updateBook', async (bookTo
     }
     catch (error: any) {
         handleError(error, `Error! Failed to update book with id: ${bookToUpdate.id}`, fullBookToUpdate);
+        throw  error;
     }
 });
 
-export const deleteBookAsync = createAsyncThunk('book/deleteBook', async (id: number, {dispatch}) => {
+export const deleteBook = createAsyncThunk('book/deleteBook', async (id: number) => {
     try {
-        const response = await deleteBookService(id);
+        const response = await deleteBookAsync(id);
         return {
             isDeleted: response.data,
             bookId: id
@@ -58,6 +61,7 @@ export const deleteBookAsync = createAsyncThunk('book/deleteBook', async (id: nu
     }
     catch (error: any) {
         handleError(error, `Failed to delete book with id: ${id}`);
+        throw  error;
     }
 });
 
@@ -72,7 +76,7 @@ const bookSlice = createSlice({
         setBooks: (state, action) => {
             state.items = action.payload;
         },
-        updateBook: (state, action) => {
+        editBook: (state, action) => {
             const index: number = state.items.findIndex(item => item.id === action.payload.id);
             state.items[index] = action.payload;
         },
@@ -82,19 +86,50 @@ const bookSlice = createSlice({
         removeBooks: state => {
             state.items = [];
         },
-        setBookToEdit: (state, action) => {
-            state.selectedBookToEdit = action.payload;
-        }
     },
     extraReducers: builder => {
         builder
-            .addCase(getBooksAsync.fulfilled, (state, action) => {
+            .addCase(getBooks.pending, state => {
+                state.isLoading = true;
+            })
+            .addCase(getBooks.fulfilled, (state, action) => {
+                state.isLoading = false;
                 state.items = action.payload!;
             })
-            .addCase(addBooksAsync.fulfilled, (state, action) => {
+            .addCase(getBooks.rejected, (state, action) => {
+                state.isLoading = false;
+
+                // if authorized user's email doesn't exist in Db don't show any error
+                if (!action.error.message?.includes('401')) {
+                    handleError(action.error, 'Error while fetching books');
+                }
+            })
+            .addCase(getBookById.pending, state => {
+                state.isLoading = true;
+            })
+            .addCase(getBookById.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.items.push(action.payload!);
+            })
+            .addCase(getBookById.rejected, (state, action) => {
+                state.isLoading = false;
+                handleError(action.error, 'Error while fetching the book');
+            })
+            .addCase(addBook.pending, state => {
+                state.isLoading = true;
+            })
+            .addCase(addBook.fulfilled, (state, action) => {
+                state.isLoading = false;
                 alert(`Last inserted id: ${action.payload}`);
             })
-            .addCase(updateBookAsync.fulfilled, (state, action) => {
+            .addCase(addBook.rejected, state => {
+                state.isLoading = false;
+            })
+            .addCase(updateBook.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(updateBook.fulfilled, (state, action) => {
+                state.isLoading = false;
                 if (action.payload!.isUpdated) {
                     const index: number = state.items.findIndex(item => item.id === action.payload!.book.id);
                     state.items[index] = action.payload!.book;
@@ -105,7 +140,14 @@ const bookSlice = createSlice({
                     alert('Failed to update the book');
                 }
             })
-            .addCase(deleteBookAsync.fulfilled, (state, action) => {
+            .addCase(updateBook.rejected, state => {
+                state.isLoading = false;
+            })
+            .addCase(deleteBook.pending, state => {
+                state.isLoading = true;
+            })
+            .addCase(deleteBook.fulfilled, (state, action) => {
+                state.isLoading = false;
                 if (action.payload!.isDeleted) {
                     state.items = state.items.filter(item => item.id !== action.payload!.bookId);
 
@@ -114,17 +156,18 @@ const bookSlice = createSlice({
                 else {
                     alert('Failed to delete the book');
                 }
-            }
-        );
+            })
+            .addCase(deleteBook.rejected, state => {
+                state.isLoading = false;
+            });
     }
 })
 
 export const {
     setBook,
-    updateBook,
+    editBook,
     removeBook,
-    removeBooks,
-    setBookToEdit} = bookSlice.actions;
+    removeBooks} = bookSlice.actions;
 export const selectBooks = (state: RootState) => state.books.items;
-export const selectBookToEdit = (state: RootState) => state.books.selectedBookToEdit;
+export const selectIsBookLoading = (state: RootState) => state.books.isLoading;
 export default bookSlice.reducer;

@@ -1,31 +1,34 @@
 import React, {useEffect} from 'react'
 import {
-    deleteBookAsync,
-    getBooksAsync,
+    deleteBook,
+    getBooks,
     removeBooks,
     selectBooks,
-    setBookToEdit,
+    selectIsBookLoading,
 } from "./bookSlice";
 import {useAppDispatch} from "../../app/hooks";
 import {useSelector} from "react-redux";
-import {getAuthorsAsync, removeAuthors, selectAuthors} from "../author/authorSlice";
+import {getAuthors, removeAuthors, selectAuthors} from "../author/authorSlice";
 import {Link} from "react-router-dom";
-import {getGenresAsync, removeGenres, selectGenres} from "../genre/genreSlice";
+import {getGenres, removeGenres, selectGenres} from "../genre/genreSlice";
 import {IBook} from "./bookModels";
-import {IAuthor} from "../author/authorModels";
+import {IAuthorSimple} from "../author/authorModels";
 import {IGenre} from "../genre/genreModels";
+import Spinner from "../Spinner";
+import {selectUserStatus} from "../authSlice";
 
-function Book() {
+function BookList() {
     const dispatch = useAppDispatch();
     const books: IBook[] = useSelector(selectBooks);
-    const authors: IAuthor[] = useSelector(selectAuthors);
+    const authors: IAuthorSimple[] = useSelector(selectAuthors);
     const genres: IGenre[] = useSelector(selectGenres);
-
+    const isLoading: boolean = useSelector(selectIsBookLoading);
+    const userStatus: string | null = useSelector(selectUserStatus);
 
     useEffect(() => {
-        dispatch(getBooksAsync());
-        dispatch(getAuthorsAsync());
-        dispatch(getGenresAsync());
+        dispatch(getBooks());
+        dispatch(getAuthors());
+        dispatch(getGenres());
 
         return () => {
             dispatch(removeBooks());
@@ -36,6 +39,10 @@ function Book() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
 
+    if (isLoading) {
+        return <Spinner />;
+    }
+
     function getShortenedDescription(description: string | undefined) : string {
         if (description) {
             return description.length > 47 ? `${description.substring(0, 47)}...` : description;
@@ -45,10 +52,10 @@ function Book() {
     }
 
     function getAuthorName(authorId: number): string {
-        const author: IAuthor | undefined = authors.find(author => author.id === authorId);
+        const author: IAuthorSimple | undefined = authors.find(author => author.id === authorId);
 
         if (author) {
-            return author.firstName + ' ' + author.lastName;
+            return author.fullName;
         }
 
         return '';
@@ -62,21 +69,30 @@ function Book() {
         return genreNames.join(', ');
     }
 
-    function deleteBook(id: number) : void {
+    function deleteCurrentBook(id: number) : void {
         const isConfirmed: boolean = window.confirm('Are you sure that you want to delete the current book?');
 
         if (isConfirmed) {
-            dispatch(deleteBookAsync(id));
+            dispatch(deleteBook(id));
         }
     }
 
     return (
         <div>
-            <h1 className="center">Books Page</h1>
+            {
+                userStatus === 'librarian' &&
+                <>
+                    <h1 className="center">Books Page</h1>
+                    <div className="button-container">
+                        <Link to="/books/add"><input type="button" className="action-button" value="Add"/></Link>
+                    </div>
+                </>
+            }
 
-            <div className="button-container">
-                <Link to="/books/add"><input type="button" className="action-button" value="Add"/></Link>
-            </div>
+            {
+                userStatus === 'student' &&
+                <h1 className="center">Books Page with favorite genres</h1>
+            }
 
             <table>
                 <thead>
@@ -92,29 +108,33 @@ function Book() {
                 <tbody>
                 {books?.length > 0 ?
                     books.map((book: IBook) => (
-                        <tr key={book.id}>
+                        <tr key={`book_${book.id}`}>
                             <td>{book.id}</td>
                             <td>{book.title}</td>
                             <td>{book.year}</td>
                             <td>{getShortenedDescription(book.description)}</td>
                             <td>{getAuthorName(book.authorId)}</td>
                             <td>[{getGenreNames(book.genreIds)}]</td>
-                            <td>
-                                <Link to="/books/edit">
-                                    <button
-                                        className="button-no-effects"
-                                        onClick={() => dispatch(setBookToEdit(book))}>
-                                        ✏️
-                                    </button>
-                                </Link>
-                            </td>
-                            <td>
-                                <button
-                                    className="button-no-effects"
-                                    onClick={() => deleteBook(book.id!)}>
-                                    ❌
-                                </button>
-                            </td>
+                            {
+                                userStatus === 'librarian' &&
+                                <>
+                                    <td>
+                                        <Link to={`/books/${book.id}/edit`}>
+                                            <button
+                                                className="button-no-effects">
+                                                ✏️
+                                            </button>
+                                        </Link>
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="button-no-effects"
+                                            onClick={() => deleteCurrentBook(book.id!)}>
+                                            ❌
+                                        </button>
+                                    </td>
+                                </>
+                            }
                         </tr>
                     ))
                     : (
@@ -128,4 +148,4 @@ function Book() {
     );
 }
 
-export default Book;
+export default BookList;

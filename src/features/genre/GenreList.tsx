@@ -1,21 +1,28 @@
 import React, {useEffect} from 'react'
 import {useSelector} from "react-redux";
-import {getGenresAsync, removeGenres, selectGenres} from "./genreSlice";
+import {getGenres, removeGenres, selectGenres, selectIsGenreLoading} from "./genreSlice";
 import {useAppDispatch} from "../../app/hooks";
 import {AppDispatch} from "../../app/store";
+import Spinner from "../Spinner";
 
-function Genre() {
+function GenreList() {
     const dispatch: AppDispatch = useAppDispatch();
     const genres = useSelector(selectGenres);
+    const isLoading: boolean = useSelector(selectIsGenreLoading);
 
     useEffect(() => {
-        dispatch(getGenresAsync());
+        dispatch(getGenres());
 
         return () => {
             dispatch(removeGenres());
         }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    if (isLoading) {
+        return <Spinner />;
+    }
 
     return (
       <div>
@@ -31,7 +38,7 @@ function Genre() {
             <tbody>
             {
                 genres?.length > 0 ? genres.map(genre => (
-                        <tr>
+                        <tr key={`genre_${genre.id}`}>
                             <td>{genre.id}</td>
                             <td>{genre.name}</td>
                         </tr>
@@ -48,4 +55,4 @@ function Genre() {
     );
 }
 
-export default Genre;
+export default GenreList;
