@@ -1,4 +1,4 @@
-import {IBook, IBookFull} from "./bookModels";
+import {IBook, IBookFull} from "../book/bookModels";
 import React from "react";
 
 export function createFullBook (book: IBook) : IBookFull {

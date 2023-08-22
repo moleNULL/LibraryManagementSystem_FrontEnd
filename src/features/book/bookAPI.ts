@@ -1,11 +1,12 @@
 import {AxiosResponse} from "axios";
 import {IBook, IBookFull} from "./bookModels";
 import API from '../apiLibrary'
+import {getJwtToken} from "../utils/jwtHelpers";
 
 export function fetchBooksAsync() : Promise<AxiosResponse<IBook[]>> {
     return API.get('/books', {
         headers: {
-            Authorization: `Bearer ${window.localStorage.getItem("jwt")}`
+            Authorization: `Bearer ${getJwtToken()}`
         }
     });
 }

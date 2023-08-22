@@ -2,7 +2,7 @@ import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
 import bookSlice from "../features/book/bookSlice";
 import authorSlice from "../features/author/authorSlice";
 import genreSlice from "../features/genre/genreSlice";
-import authSlice from "../features/authSlice";
+import authSlice from "../features/auth/authSlice";
 
 export const store = configureStore({
   reducer: {

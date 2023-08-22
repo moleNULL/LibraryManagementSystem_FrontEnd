@@ -2,24 +2,46 @@ import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
 import {IBook, IBookFull} from "./bookModels";
 import {addBooksAsync, deleteBookAsync, fetchBookByIdAsync, fetchBooksAsync, updateBookAsync} from "./bookAPI";
 import {RootState} from "../../app/store";
-import {createFullBook, handleError} from "./bookHelpers";
-
+import {createFullBook, handleError} from "../utils/bookHelpers";
 
 const initialState = {
     items: [] as IBook[],
     isLoading: false,
+    addBookStatus: {
+        lastInsertedId: null as number | null,
+        isAdded: null as boolean | null
+    },
+    isUpdated: null as boolean | null,
+    isDeleted: null as boolean | null,
 };
+
 export const getBooks = createAsyncThunk('book/getBooks', async () => {
-    const response = await fetchBooksAsync();
-    if (response.status === 404) {
-        alert('404');
+    try {
+        const response = await fetchBooksAsync();
+        return {
+            data: response.data,
+            userRole: response.headers["user-role"]
+        };
     }
-    return response.data;
+    catch (error: any) {
+        // if authorized user's email doesn't exist in Db don't show any error
+        if (!error.message?.includes('403')) {
+            handleError(error, 'Error while fetching books');
+        }
+
+        throw error;
+    }
 })
 
 export const getBookById = createAsyncThunk('book/getBookById', async (id: number) => {
-    const response = await fetchBookByIdAsync(id);
-    return response.data;
+    try {
+        const response = await fetchBookByIdAsync(id);
+        return response.data;
+    }
+    catch (error: any) {
+        handleError(error, 'Error while fetching the book');
+        throw error;
+    }
 })
 
 export const addBook = createAsyncThunk('book/postBooks', async (bookToAdd: IBook) => {
@@ -91,74 +113,82 @@ const bookSlice = createSlice({
         builder
             .addCase(getBooks.pending, state => {
                 state.isLoading = true;
+                state.addBookStatus = {
+                    isAdded: null,
+                    lastInsertedId: null
+                };
+                state.isUpdated = null;
+                state.isDeleted = null;
             })
             .addCase(getBooks.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.items = action.payload!;
+                state.items = action.payload!.data;
+
+                alert(action.payload!.userRole);
             })
             .addCase(getBooks.rejected, (state, action) => {
                 state.isLoading = false;
-
-                // if authorized user's email doesn't exist in Db don't show any error
-                if (!action.error.message?.includes('401')) {
-                    handleError(action.error, 'Error while fetching books');
-                }
             })
             .addCase(getBookById.pending, state => {
                 state.isLoading = true;
             })
             .addCase(getBookById.fulfilled, (state, action) => {
                 state.isLoading = false;
+
                 state.items.push(action.payload!);
             })
             .addCase(getBookById.rejected, (state, action) => {
                 state.isLoading = false;
-                handleError(action.error, 'Error while fetching the book');
             })
             .addCase(addBook.pending, state => {
                 state.isLoading = true;
+                state.addBookStatus = {
+                    isAdded: null,
+                    lastInsertedId: null
+                };
             })
             .addCase(addBook.fulfilled, (state, action) => {
                 state.isLoading = false;
-                alert(`Last inserted id: ${action.payload}`);
+                state.addBookStatus = {
+                    isAdded: true,
+                    lastInsertedId: action.payload
+                };
             })
             .addCase(addBook.rejected, state => {
                 state.isLoading = false;
+                state.addBookStatus = {
+                    isAdded: false,
+                    lastInsertedId: null
+                };
             })
             .addCase(updateBook.pending, (state) => {
                 state.isLoading = true;
+                state.isUpdated = null;
             })
             .addCase(updateBook.fulfilled, (state, action) => {
                 state.isLoading = false;
-                if (action.payload!.isUpdated) {
-                    const index: number = state.items.findIndex(item => item.id === action.payload!.book.id);
-                    state.items[index] = action.payload!.book;
+                state.isUpdated = true;
 
-                    alert('Updated successfully');
-                }
-                else {
-                    alert('Failed to update the book');
-                }
+                const index: number = state.items.findIndex(item => item.id === action.payload!.book.id);
+                state.items[index] = action.payload!.book;
             })
             .addCase(updateBook.rejected, state => {
                 state.isLoading = false;
+                state.isUpdated = false;
             })
             .addCase(deleteBook.pending, state => {
                 state.isLoading = true;
+                state.isDeleted = null;
             })
             .addCase(deleteBook.fulfilled, (state, action) => {
                 state.isLoading = false;
-                if (action.payload!.isDeleted) {
-                    state.items = state.items.filter(item => item.id !== action.payload!.bookId);
+                state.isDeleted = true;
 
-                    alert('Deleted successfully');
-                }
-                else {
-                    alert('Failed to delete the book');
-                }
+                state.items = state.items.filter(item => item.id !== action.payload!.bookId);
             })
             .addCase(deleteBook.rejected, state => {
                 state.isLoading = false;
+                state.isDeleted = false;
             });
     }
 })
@@ -170,4 +200,7 @@ export const {
     removeBooks} = bookSlice.actions;
 export const selectBooks = (state: RootState) => state.books.items;
 export const selectIsBookLoading = (state: RootState) => state.books.isLoading;
+export const selectAddBookStatus = (state: RootState) => state.books.addBookStatus;
+export const selectIsBookUpdated = (state: RootState) => state.books.isUpdated;
+export const selectIsBookDeleted = (state: RootState) => state.books.isDeleted;
 export default bookSlice.reducer;

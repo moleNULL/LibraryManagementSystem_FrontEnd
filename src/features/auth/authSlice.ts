@@ -1,17 +1,16 @@
 import {createSlice} from "@reduxjs/toolkit";
-import {RootState} from "../app/store";
-import {redirect} from "react-router-dom";
+import {RootState} from "../../app/store";
 
 interface IAuth {
     isLoggedIn: boolean,
     userName: string,
-    userStatus: string | null,
+    userRole: string | null,
 }
 
 const initialState: IAuth = {
     isLoggedIn: false,
     userName: '',
-    userStatus: 'student',
+    userRole: 'librarian',
 }
 
 const authSlice = createSlice({
@@ -25,12 +24,18 @@ const authSlice = createSlice({
         logout: state => {
             state.isLoggedIn = false;
             state.userName = '';
+        },
+        setUserRole: (state, action) => {
+            state.userRole = action.payload;
         }
     }
 })
 
-export const {login, logout} = authSlice.actions;
+export const {
+    login,
+    logout,
+    setUserRole} = authSlice.actions;
 export const selectIsLoggedIn = (state: RootState) => state.auth.isLoggedIn;
 export const selectUserName = (state: RootState) => state.auth.userName;
-export const selectUserStatus = (state: RootState) => state.auth.userStatus;
+export const selectUserStatus = (state: RootState) => state.auth.userRole;
 export default authSlice.reducer;

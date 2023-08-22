@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {useAppDispatch} from "../../app/hooks";
 import {useSelector} from "react-redux";
-import {addBook} from "./bookSlice";
+import {addBook, selectAddBookStatus} from "./bookSlice";
 import {getAuthors, selectAuthors} from "../author/authorSlice";
 import {Link} from "react-router-dom";
 import {IBook} from "./bookModels";
@@ -10,7 +10,8 @@ import {IGenre} from "../genre/genreModels";
 import {getGenres, selectGenres} from "../genre/genreSlice";
 import {AppDispatch} from "../../app/store";
 import BookForm from './components/BookForm';
-import {updateFormBookData, updateFormBookGenresData} from "./bookHelpers";
+import {updateFormBookData, updateFormBookGenresData} from "../utils/bookHelpers";
+import AddBookNotification from "./components/AddBookNotification";
 
 const initialFormBookData: IBook = {
     id: undefined,
@@ -25,6 +26,7 @@ function BookAdd() {
     const dispatch: AppDispatch = useAppDispatch();
     const authors: IAuthorSimple[] = useSelector(selectAuthors);
     const genres: IGenre[] = useSelector(selectGenres);
+    const addBookStatus = useSelector(selectAddBookStatus);
 
     const [formBookData, setFormBookData] = useState<IBook>(initialFormBookData);
 
@@ -73,6 +75,7 @@ function BookAdd() {
                     submitButtonText={"Add Book"}
                 />
             </main>
+            <AddBookNotification addBookStatus={addBookStatus}/>
         </div>
     );
 }

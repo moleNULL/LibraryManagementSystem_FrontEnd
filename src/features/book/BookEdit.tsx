@@ -5,7 +5,7 @@ import {AppDispatch} from "../../app/store";
 import {
     getBookById,
     removeBooks, selectBooks,
-    selectIsBookLoading,
+    selectIsBookLoading, selectIsBookUpdated,
     updateBook
 } from "./bookSlice";
 import {getAuthors, removeAuthors, selectAuthors, selectIsAuthorLoading} from "../author/authorSlice";
@@ -16,8 +16,9 @@ import {IGenre} from "../genre/genreModels";
 import {getGenres, removeGenres, selectGenres, selectIsGenreLoading} from "../genre/genreSlice";
 import {isEqual} from "lodash";
 import BookForm from './components/BookForm';
-import {updateFormBookData, updateFormBookGenresData} from "./bookHelpers";
+import {updateFormBookData, updateFormBookGenresData} from "../utils/bookHelpers";
 import Spinner from "../Spinner";
+import UpdateBookNotification from "./components/UpdateBookNotification";
 
 function BookEdit() {
     const dispatch: AppDispatch = useAppDispatch();
@@ -27,6 +28,7 @@ function BookEdit() {
     const isBookLoading: boolean = useSelector(selectIsBookLoading);
     const isAuthorLoading: boolean = useSelector(selectIsAuthorLoading);
     const isGenreLoading: boolean = useSelector(selectIsGenreLoading);
+    const isBookUpdated: boolean | null = useSelector(selectIsBookUpdated);
     let bookToEdit: IBook = useSelector(selectBooks)[0];
 
     const [formBookData, setFormBookData] = useState<IBook>(bookToEdit);
@@ -98,6 +100,7 @@ function BookEdit() {
                     : <h2>No book chosen to edit</h2>
                 : <></>
             }
+            <UpdateBookNotification isBookUpdated={isBookUpdated}/>
         </div>
     );
 }

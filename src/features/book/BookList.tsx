@@ -3,7 +3,7 @@ import {
     deleteBook,
     getBooks,
     removeBooks,
-    selectBooks,
+    selectBooks, selectIsBookDeleted,
     selectIsBookLoading,
 } from "./bookSlice";
 import {useAppDispatch} from "../../app/hooks";
@@ -15,14 +15,16 @@ import {IBook} from "./bookModels";
 import {IAuthorSimple} from "../author/authorModels";
 import {IGenre} from "../genre/genreModels";
 import Spinner from "../Spinner";
-import {selectUserStatus} from "../authSlice";
+import {selectUserStatus} from "../auth/authSlice";
+import DeleteBookNotification from "./components/DeleteBookNotification";
 
 function BookList() {
     const dispatch = useAppDispatch();
     const books: IBook[] = useSelector(selectBooks);
     const authors: IAuthorSimple[] = useSelector(selectAuthors);
     const genres: IGenre[] = useSelector(selectGenres);
-    const isLoading: boolean = useSelector(selectIsBookLoading);
+    const isBookLoading: boolean = useSelector(selectIsBookLoading);
+    const isBookDeleted: boolean | null = useSelector(selectIsBookDeleted);
     const userStatus: string | null = useSelector(selectUserStatus);
 
     useEffect(() => {
@@ -39,7 +41,7 @@ function BookList() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
 
-    if (isLoading) {
+    if (isBookLoading) {
         return <Spinner />;
     }
 
@@ -114,7 +116,7 @@ function BookList() {
                             <td>{book.year}</td>
                             <td>{getShortenedDescription(book.description)}</td>
                             <td>{getAuthorName(book.authorId)}</td>
-                            <td>[{getGenreNames(book.genreIds)}]</td>
+                            <td>{getGenreNames(book.genreIds)}</td>
                             {
                                 userStatus === 'librarian' &&
                                 <>
@@ -144,6 +146,7 @@ function BookList() {
                 )}
                 </tbody>
             </table>
+            <DeleteBookNotification isBookDeleted={isBookDeleted}/>
         </div>
     );
 }
