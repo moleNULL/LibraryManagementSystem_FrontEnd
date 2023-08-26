@@ -4,7 +4,7 @@ export interface IBook {
     year: number,
     description?: string | undefined,
     authorId: number,
-    genreIds: number[]
+    genreIds: number[],
 }
 
 export interface IBookFull extends IBook {

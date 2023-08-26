@@ -13,11 +13,13 @@ import BookEdit from "./features/book/BookEdit";
 import GenreList from "./features/genre/GenreList";
 import Footer from "./features/Footer";
 import {useSelector} from "react-redux";
-import {selectIsLoggedIn, selectUserStatus} from "./features/auth/authSlice";
+import {selectIsLoggedIn, selectIsPendingRegistration, selectUserRole} from "./features/auth/authSlice";
+import Register from "./features/Register";
 
 function App() {
-    const userStatus: string | null = useSelector(selectUserStatus);
+    const userRole: string | undefined = useSelector(selectUserRole);
     const isLoggedIn: boolean = useSelector(selectIsLoggedIn);
+    const isPendingRegistration: boolean | undefined = useSelector(selectIsPendingRegistration);
 
   return (
     <div>
@@ -26,29 +28,31 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 {
-                    isLoggedIn &&
-                    <>
-                        <Route path="/books">
-                            <Route index element={<BookList />} />
-                            {
-                                userStatus === 'librarian' &&
-                                <>
-                                    <Route path="add" element={<BookAdd />} />
-                                    <Route path=":id/edit" element={<BookEdit />} />
-                                </>
-                            }
-                        </Route>
-                        <Route path="/genres">
-                            <Route index element={<GenreList />} />
-                            {
-                                userStatus === 'librarian' &&
-                                <>
-                                    <Route path="add" />
-                                    <Route path="edit" />
-                                </>
-                            }
-                        </Route>
-                    </>
+                    isLoggedIn
+                        ?
+                        <>
+                            <Route path="/books">
+                                <Route index element={<BookList />} />
+                                {
+                                    userRole === 'librarian' &&
+                                    <>
+                                        <Route path="add" element={<BookAdd />} />
+                                        <Route path=":id/edit" element={<BookEdit />} />
+                                    </>
+                                }
+                            </Route>
+                            <Route path="/genres">
+                                <Route index element={<GenreList />} />
+                                {
+                                    userRole === 'librarian' &&
+                                    <>
+                                        <Route path="add" />
+                                        <Route path="edit" />
+                                    </>
+                                }
+                            </Route>
+                        </>
+                        : isPendingRegistration && <Route path="/register" element={<Register />} />
                 }
             </Routes>
             <Footer />

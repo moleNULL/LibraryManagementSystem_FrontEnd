@@ -6,8 +6,9 @@ import {getJwtToken} from "../utils/jwtHelpers";
 export function fetchBooksAsync() : Promise<AxiosResponse<IBook[]>> {
     return API.get('/books', {
         headers: {
-            Authorization: `Bearer ${getJwtToken()}`
-        }
+            Authorization: `Bearer ${getJwtToken()}`,
+        },
+        withCredentials: true,
     });
 }
 

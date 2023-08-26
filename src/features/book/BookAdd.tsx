@@ -2,12 +2,12 @@ import React, {useEffect, useState} from 'react'
 import {useAppDispatch} from "../../app/hooks";
 import {useSelector} from "react-redux";
 import {addBook, selectAddBookStatus} from "./bookSlice";
-import {getAuthors, selectAuthors} from "../author/authorSlice";
+import {getAuthors, removeAuthors, selectAuthors} from "../author/authorSlice";
 import {Link} from "react-router-dom";
 import {IBook} from "./bookModels";
 import {IAuthorSimple} from "../author/authorModels";
 import {IGenre} from "../genre/genreModels";
-import {getGenres, selectGenres} from "../genre/genreSlice";
+import {getGenres, removeGenres, selectGenres} from "../genre/genreSlice";
 import {AppDispatch} from "../../app/store";
 import BookForm from './components/BookForm';
 import {updateFormBookData, updateFormBookGenresData} from "../utils/bookHelpers";
@@ -34,6 +34,11 @@ function BookAdd() {
         dispatch(getAuthors());
         dispatch(getGenres());
 
+        return (() => {
+            dispatch(removeAuthors());
+            dispatch(removeGenres());
+        })
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
 
@@ -45,11 +50,11 @@ function BookAdd() {
     }
 
     function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) : void {
-        updateFormBookData(event, formBookData, setFormBookData);
+        updateFormBookData(event, setFormBookData);
     }
 
     function handleGenreChange(event: React.ChangeEvent<HTMLSelectElement>): void {
-        updateFormBookGenresData(event, formBookData, setFormBookData);
+        updateFormBookGenresData(event, setFormBookData);
     }
 
     return (

@@ -15,17 +15,18 @@ import {IBook} from "./bookModels";
 import {IAuthorSimple} from "../author/authorModels";
 import {IGenre} from "../genre/genreModels";
 import Spinner from "../Spinner";
-import {selectUserStatus} from "../auth/authSlice";
+import {selectUserRole} from "../auth/authSlice";
 import DeleteBookNotification from "./components/DeleteBookNotification";
+import {AppDispatch} from "../../app/store";
 
 function BookList() {
-    const dispatch = useAppDispatch();
+    const dispatch: AppDispatch = useAppDispatch();
     const books: IBook[] = useSelector(selectBooks);
     const authors: IAuthorSimple[] = useSelector(selectAuthors);
     const genres: IGenre[] = useSelector(selectGenres);
     const isBookLoading: boolean = useSelector(selectIsBookLoading);
     const isBookDeleted: boolean | null = useSelector(selectIsBookDeleted);
-    const userStatus: string | null = useSelector(selectUserStatus);
+    const userRole: string | undefined = useSelector(selectUserRole);
 
     useEffect(() => {
         dispatch(getBooks());
@@ -82,7 +83,7 @@ function BookList() {
     return (
         <div>
             {
-                userStatus === 'librarian' &&
+                userRole === 'librarian' &&
                 <>
                     <h1 className="center">Books Page</h1>
                     <div className="button-container">
@@ -92,7 +93,7 @@ function BookList() {
             }
 
             {
-                userStatus === 'student' &&
+                userRole === 'student' &&
                 <h1 className="center">Books Page with favorite genres</h1>
             }
 
@@ -118,7 +119,7 @@ function BookList() {
                             <td>{getAuthorName(book.authorId)}</td>
                             <td>{getGenreNames(book.genreIds)}</td>
                             {
-                                userStatus === 'librarian' &&
+                                userRole === 'librarian' &&
                                 <>
                                     <td>
                                         <Link to={`/books/${book.id}/edit`}>

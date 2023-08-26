@@ -23,3 +23,8 @@ export function extractUserFullNameFromJwt(token: string): string {
     const userLoginData: any = jwt_decode(token);
     return userLoginData.name;
 }
+
+export function extractUserEmailFromJwt(token: string): string {
+    const userLoginData: any = jwt_decode(token);
+    return userLoginData.email;
+}

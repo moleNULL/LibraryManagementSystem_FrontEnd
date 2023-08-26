@@ -69,11 +69,11 @@ function BookEdit() {
     }
 
     function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) : void {
-        updateFormBookData(event, formBookData, setFormBookData);
+        updateFormBookData(event, setFormBookData);
     }
 
     function handleGenreChange(event: React.ChangeEvent<HTMLSelectElement>): void {
-        updateFormBookGenresData(event, formBookData, setFormBookData);
+        updateFormBookGenresData(event, setFormBookData);
     }
 
     return (

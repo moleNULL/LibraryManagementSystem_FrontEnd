@@ -18,17 +18,10 @@ const initialState = {
 export const getBooks = createAsyncThunk('book/getBooks', async () => {
     try {
         const response = await fetchBooksAsync();
-        return {
-            data: response.data,
-            userRole: response.headers["user-role"]
-        };
+        return response.data;
     }
     catch (error: any) {
-        // if authorized user's email doesn't exist in Db don't show any error
-        if (!error.message?.includes('403')) {
-            handleError(error, 'Error while fetching books');
-        }
-
+        handleError(error, 'Error while fetching books');
         throw error;
     }
 })
@@ -122,9 +115,7 @@ const bookSlice = createSlice({
             })
             .addCase(getBooks.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.items = action.payload!.data;
-
-                alert(action.payload!.userRole);
+                state.items = action.payload!;
             })
             .addCase(getBooks.rejected, (state, action) => {
                 state.isLoading = false;

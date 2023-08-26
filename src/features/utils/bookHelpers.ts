@@ -35,34 +35,32 @@ export function handleError(error: any, message: string, bookInfo?: IBookFull) :
 
 export function updateFormBookData(
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-    formBookData: IBook,
     setFormBookData: React.Dispatch<React.SetStateAction<IBook>>) : void {
     const {name, value} = event.target;
 
     if (name === 'book.title') {
-        setFormBookData(prevState => ({...prevState, title: value}));
+        setFormBookData((prevState: IBook) => ({...prevState, title: value}));
     }
 
     if (name === 'book.year') {
-        setFormBookData(prevState => ({...prevState, year: parseInt(value)}));
+        setFormBookData((prevState: IBook) => ({...prevState, year: parseInt(value)}));
     }
 
     if (name === 'book.description') {
         if (value) {
-            setFormBookData(prevState => ({...prevState, description: value}));
+            setFormBookData((prevState: IBook) => ({...prevState, description: value}));
         }
     }
 
     if (name === 'book.selectedAuthorId') {
-        setFormBookData(prevState => ({...prevState, authorId: parseInt(value)}));
+        setFormBookData((prevState: IBook) => ({...prevState, authorId: parseInt(value)}));
     }
 }
 
 export function updateFormBookGenresData(
     event: React.ChangeEvent<HTMLSelectElement>,
-    formBookData: IBook,
     setFormBookData: React.Dispatch<React.SetStateAction<IBook>>
-) {
+) : void {
     const selectedOptions: number[] = Array.from(event.target.selectedOptions).map(option => parseInt(option.value));
     setFormBookData((prevState: IBook) => ({ ...prevState, genreIds: selectedOptions }));
 }
