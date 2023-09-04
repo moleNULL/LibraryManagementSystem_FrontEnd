@@ -4,10 +4,11 @@ import {getGenres, removeGenres, selectGenres, selectIsGenreLoading} from "./gen
 import {useAppDispatch} from "../../app/hooks";
 import {AppDispatch} from "../../app/store";
 import Spinner from "../Spinner";
+import {IGenre} from "./genreModels";
 
 function GenreList() {
     const dispatch: AppDispatch = useAppDispatch();
-    const genres = useSelector(selectGenres);
+    const genres: IGenre[] = useSelector(selectGenres);
     const isLoading: boolean = useSelector(selectIsGenreLoading);
 
     useEffect(() => {

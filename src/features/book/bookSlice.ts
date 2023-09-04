@@ -2,18 +2,28 @@ import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
 import {IBook, IBookFull} from "./bookModels";
 import {addBooksAsync, deleteBookAsync, fetchBookByIdAsync, fetchBooksAsync, updateBookAsync} from "./bookAPI";
 import {RootState} from "../../app/store";
-import {createFullBook, handleError} from "../utils/bookHelpers";
+import {createFullBook, handleError} from "../../utils/bookHelpers";
 
-const initialState = {
-    items: [] as IBook[],
+interface IAddBookStatus {
+    lastInsertedId?: number;
+    isAdded?: boolean;
+}
+
+interface IBookState {
+    items: IBook[];
+    isLoading: boolean;
+    addBookStatus: IAddBookStatus;
+    isUpdated?: boolean;
+    isDeleted?: boolean;
+}
+
+const initialState: IBookState = {
+    items: [],
     isLoading: false,
-    addBookStatus: {
-        lastInsertedId: null as number | null,
-        isAdded: null as boolean | null
-    },
-    isUpdated: null as boolean | null,
-    isDeleted: null as boolean | null,
-};
+    addBookStatus: {},
+    isUpdated: undefined,
+    isDeleted: undefined,
+}
 
 export const getBooks = createAsyncThunk('book/getBooks', async () => {
     try {
@@ -98,26 +108,21 @@ const bookSlice = createSlice({
         removeBook: (state, action) => {
             state.items = state.items.filter(item => item.id !== action.payload);
         },
-        removeBooks: state => {
-            state.items = [];
-        },
+        removeBooks: () => initialState,
     },
     extraReducers: builder => {
         builder
-            .addCase(getBooks.pending, state => {
-                state.isLoading = true;
-                state.addBookStatus = {
-                    isAdded: null,
-                    lastInsertedId: null
-                };
-                state.isUpdated = null;
-                state.isDeleted = null;
+            .addCase(getBooks.pending, () => {
+                return {
+                    ...initialState,
+                    isLoading: true,
+                }
             })
             .addCase(getBooks.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.items = action.payload!;
             })
-            .addCase(getBooks.rejected, (state, action) => {
+            .addCase(getBooks.rejected, (state) => {
                 state.isLoading = false;
             })
             .addCase(getBookById.pending, state => {
@@ -125,17 +130,16 @@ const bookSlice = createSlice({
             })
             .addCase(getBookById.fulfilled, (state, action) => {
                 state.isLoading = false;
-
                 state.items.push(action.payload!);
             })
-            .addCase(getBookById.rejected, (state, action) => {
+            .addCase(getBookById.rejected, (state) => {
                 state.isLoading = false;
             })
             .addCase(addBook.pending, state => {
                 state.isLoading = true;
                 state.addBookStatus = {
-                    isAdded: null,
-                    lastInsertedId: null
+                    isAdded: undefined,
+                    lastInsertedId: undefined,
                 };
             })
             .addCase(addBook.fulfilled, (state, action) => {
@@ -149,12 +153,12 @@ const bookSlice = createSlice({
                 state.isLoading = false;
                 state.addBookStatus = {
                     isAdded: false,
-                    lastInsertedId: null
+                    lastInsertedId: undefined,
                 };
             })
             .addCase(updateBook.pending, (state) => {
                 state.isLoading = true;
-                state.isUpdated = null;
+                state.isUpdated = undefined;
             })
             .addCase(updateBook.fulfilled, (state, action) => {
                 state.isLoading = false;
@@ -169,7 +173,7 @@ const bookSlice = createSlice({
             })
             .addCase(deleteBook.pending, state => {
                 state.isLoading = true;
-                state.isDeleted = null;
+                state.isDeleted = undefined;
             })
             .addCase(deleteBook.fulfilled, (state, action) => {
                 state.isLoading = false;

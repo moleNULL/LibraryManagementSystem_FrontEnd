@@ -1,5 +1,5 @@
 import React from "react";
-import {IStudent} from "../student/studentModel";
+import {IStudent} from "../features/student/studentModel";
 
 export function updateFormStudentData(
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,

@@ -10,8 +10,8 @@ import {IGenre} from "../genre/genreModels";
 import {getGenres, removeGenres, selectGenres} from "../genre/genreSlice";
 import {AppDispatch} from "../../app/store";
 import BookForm from './components/BookForm';
-import {updateFormBookData, updateFormBookGenresData} from "../utils/bookHelpers";
-import AddBookNotification from "./components/AddBookNotification";
+import {updateFormBookData, updateFormBookGenresData} from "../../utils/bookHelpers";
+import useCrudNotification from "../../hooks/useCrudNotification";
 
 const initialFormBookData: IBook = {
     id: undefined,
@@ -29,6 +29,7 @@ function BookAdd() {
     const addBookStatus = useSelector(selectAddBookStatus);
 
     const [formBookData, setFormBookData] = useState<IBook>(initialFormBookData);
+    useCrudNotification('Added book', addBookStatus.isAdded, `Last inserted id: ${addBookStatus.lastInsertedId}`);
 
     useEffect(() => {
         dispatch(getAuthors());
@@ -80,7 +81,6 @@ function BookAdd() {
                     submitButtonText={"Add Book"}
                 />
             </main>
-            <AddBookNotification addBookStatus={addBookStatus}/>
         </div>
     );
 }

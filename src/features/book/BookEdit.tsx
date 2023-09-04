@@ -16,9 +16,9 @@ import {IGenre} from "../genre/genreModels";
 import {getGenres, removeGenres, selectGenres, selectIsGenreLoading} from "../genre/genreSlice";
 import {isEqual} from "lodash";
 import BookForm from './components/BookForm';
-import {updateFormBookData, updateFormBookGenresData} from "../utils/bookHelpers";
+import {updateFormBookData, updateFormBookGenresData} from "../../utils/bookHelpers";
 import Spinner from "../Spinner";
-import UpdateBookNotification from "./components/UpdateBookNotification";
+import useCrudNotification from "../../hooks/useCrudNotification";
 
 function BookEdit() {
     const dispatch: AppDispatch = useAppDispatch();
@@ -28,10 +28,11 @@ function BookEdit() {
     const isBookLoading: boolean = useSelector(selectIsBookLoading);
     const isAuthorLoading: boolean = useSelector(selectIsAuthorLoading);
     const isGenreLoading: boolean = useSelector(selectIsGenreLoading);
-    const isBookUpdated: boolean | null = useSelector(selectIsBookUpdated);
+    const isBookUpdated: boolean | undefined = useSelector(selectIsBookUpdated);
     let bookToEdit: IBook = useSelector(selectBooks)[0];
 
     const [formBookData, setFormBookData] = useState<IBook>(bookToEdit);
+    useCrudNotification('Updated book', isBookUpdated);
 
     useEffect(() => {
         dispatch(getBookById(parseInt(id!)));
@@ -100,7 +101,6 @@ function BookEdit() {
                     : <h2>No book chosen to edit</h2>
                 : <></>
             }
-            <UpdateBookNotification isBookUpdated={isBookUpdated}/>
         </div>
     );
 }

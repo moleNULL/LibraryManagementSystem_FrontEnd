@@ -3,20 +3,22 @@ import {Link, NavigateFunction, useNavigate} from "react-router-dom";
 import {GoogleLogin, googleLogout} from "@react-oauth/google";
 import {
     login,
-    logout,
     selectIsLoggedIn,
-    selectIsPendingRegistration,
-    serverLogIn
+    selectIsPendingRegistration, selectIsServerResponseLoading,
+    serverLogIn, serverLogOut
 } from "./auth/authSlice";
 import {useAppDispatch} from "../app/hooks";
 import {useSelector} from "react-redux";
-import {extractUserFullNameFromJwt, getJwtExpirationTime, getJwtToken, removeJwtToken, setJwtToken} from "./utils/jwtHelpers";
+import {extractUserFullNameFromJwt, getJwtExpirationTime, getJwtToken, removeJwtToken, setJwtToken} from "../utils/jwtHelpers";
 import {AppDispatch} from "../app/store";
 
 function Nav() {
-    const dispatcher: AppDispatch = useAppDispatch();
+    const dispatch: AppDispatch = useAppDispatch();
     const navigate: NavigateFunction = useNavigate();
     const isPendingRegistration: boolean | undefined = useSelector(selectIsPendingRegistration);
+
+    // need to check otherwise Spinner won't be shown on log out
+    const isServerResponseLoading: boolean | undefined = useSelector(selectIsServerResponseLoading);
 
     useEffect(() => {
         if (isPendingRegistration === true) {
@@ -26,14 +28,14 @@ function Nav() {
             const token: string | null = getJwtToken();
             if (token) {
                 const userFullName: string = extractUserFullNameFromJwt(token);
-                dispatcher(login(userFullName));
+                dispatch(login(userFullName));
             }
         }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isPendingRegistration]);
 
-    if (getJwtToken()) {
+    if (getJwtToken() && !isServerResponseLoading) {
         const currentJwtExpirationTime: string | null = getJwtExpirationTime();
 
         if (currentJwtExpirationTime) {
@@ -42,7 +44,7 @@ function Nav() {
             } else {
                 if (isPendingRegistration !== true) {
                     const userFullName: string = extractUserFullNameFromJwt(getJwtToken()!);
-                    dispatcher(login(userFullName));
+                    dispatch(login(userFullName));
                 }
             }
         }
@@ -56,7 +58,7 @@ function Nav() {
         const expirationTime: number = new Date().getTime() + 3600 * 1000; // 1 hour in milliseconds
         setJwtToken(response.credential, expirationTime.toString());
 
-        dispatcher(serverLogIn());
+        dispatch(serverLogIn());
     }
 
     function errorMessage() : void {
@@ -64,9 +66,8 @@ function Nav() {
     }
 
     function logOut() : void {
+        dispatch(serverLogOut());
         googleLogout();
-        removeJwtToken();
-        dispatcher(logout());
     }
 
     return (

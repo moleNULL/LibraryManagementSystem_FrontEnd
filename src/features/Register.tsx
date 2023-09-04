@@ -6,8 +6,8 @@ import {AppDispatch} from "../app/store";
 import {useAppDispatch} from "../app/hooks";
 import {getGenres, removeGenres, selectGenres} from "./genre/genreSlice";
 import {IStudent} from "./student/studentModel";
-import {updateFormStudentData, updateFormStudentFavoriteGenresData} from "./utils/studentHelper";
-import {extractUserEmailFromJwt, extractUserFullNameFromJwt, getJwtToken} from "./utils/jwtHelpers";
+import {updateFormStudentData, updateFormStudentFavoriteGenresData} from "../utils/studentHelper";
+import {extractUserEmailFromJwt, extractUserFullNameFromJwt, getJwtToken} from "../utils/jwtHelpers";
 import {NavigateFunction, useNavigate} from "react-router-dom";
 
 const initialStudentFormData: IStudent = {
@@ -46,7 +46,7 @@ function Register() {
     function handleSubmit(event: React.FormEvent<HTMLFormElement>) : void {
         event.preventDefault();
         dispatch(serverRegisterStudent(formStudentData));
-        navigate("/");
+        navigate("/", {replace: true});
     }
 
     function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) : void {

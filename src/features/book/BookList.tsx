@@ -16,8 +16,8 @@ import {IAuthorSimple} from "../author/authorModels";
 import {IGenre} from "../genre/genreModels";
 import Spinner from "../Spinner";
 import {selectUserRole} from "../auth/authSlice";
-import DeleteBookNotification from "./components/DeleteBookNotification";
 import {AppDispatch} from "../../app/store";
+import useCrudNotification from "../../hooks/useCrudNotification";
 
 function BookList() {
     const dispatch: AppDispatch = useAppDispatch();
@@ -25,8 +25,10 @@ function BookList() {
     const authors: IAuthorSimple[] = useSelector(selectAuthors);
     const genres: IGenre[] = useSelector(selectGenres);
     const isBookLoading: boolean = useSelector(selectIsBookLoading);
-    const isBookDeleted: boolean | null = useSelector(selectIsBookDeleted);
+    const isBookDeleted: boolean | undefined = useSelector(selectIsBookDeleted);
     const userRole: string | undefined = useSelector(selectUserRole);
+
+    useCrudNotification('Deleted book', isBookDeleted);
 
     useEffect(() => {
         dispatch(getBooks());
@@ -97,6 +99,10 @@ function BookList() {
                 <h1 className="center">Books Page with favorite genres</h1>
             }
 
+            {
+                !userRole && <h1 className="center">Books Page</h1>
+            }
+
             <table>
                 <thead>
                     <tr>
@@ -147,7 +153,6 @@ function BookList() {
                 )}
                 </tbody>
             </table>
-            <DeleteBookNotification isBookDeleted={isBookDeleted}/>
         </div>
     );
 }

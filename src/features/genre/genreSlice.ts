@@ -20,14 +20,15 @@ const genreSlice = createSlice({
         setGenres: (state, action) => {
             state.items = action.payload;
         },
-        removeGenres: state => {
-            state.items = [];
-        }
+        removeGenres: () => initialState,
     },
     extraReducers: builder => {
         builder
             .addCase(getGenres.pending, (state) => {
-                state.isLoading = true;
+                return {
+                    ...initialState,
+                    isLoading: true,
+                }
             })
             .addCase(getGenres.fulfilled, (state, action) => {
                 state.isLoading = false;

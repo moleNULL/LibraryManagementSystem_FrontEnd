@@ -21,14 +21,15 @@ const authorSlice = createSlice({
         setAuthors: (state, action) => {
             state.items = action.payload;
         },
-        removeAuthors: state => {
-            state.items = [];
-        }
+        removeAuthors: () => initialState,
     },
     extraReducers: builder => {
         builder
             .addCase(getAuthors.pending, (state) => {
-                state.isLoading = true;
+                return {
+                    ...initialState,
+                    isLoading: true,
+                }
             })
             .addCase(getAuthors.fulfilled, (state, action) => {
                 state.isLoading = false;
